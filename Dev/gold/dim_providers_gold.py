@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS gold.dim_provider
+# MAGIC CREATE TABLE IF NOT EXISTS `dev-catalog`.`gold`.`dim_providers`
 # MAGIC (
 # MAGIC ProviderID string,
 # MAGIC FirstName string,
@@ -13,12 +13,12 @@
 # COMMAND ----------
 
 # MAGIC %sql 
-# MAGIC truncate TABLE gold.dim_provider 
+# MAGIC truncate TABLE `dev-catalog`.`gold`.`dim_providers`
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC insert into gold.dim_provider
+# MAGIC insert into `dev-catalog`.`gold`.`dim_providers`
 # MAGIC select 
 # MAGIC ProviderID ,
 # MAGIC FirstName ,
@@ -26,5 +26,5 @@
 # MAGIC concat(DeptID,'-',datasource) deptid,
 # MAGIC NPI ,
 # MAGIC datasource 
-# MAGIC  from silver.providers
+# MAGIC  from `dev-catalog`.`silver`.`providers`
 # MAGIC  where is_quarantined=false

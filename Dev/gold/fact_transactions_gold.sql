@@ -1,5 +1,5 @@
 -- Databricks notebook source
-create table if not exists gold.fact_transactions
+create table if not exists `dev-catalog`.`gold`.`fact_transactions`
 (
   TransactionID string,
   SRC_TransactionID string,
@@ -22,11 +22,11 @@ create table if not exists gold.fact_transactions
 
 -- COMMAND ----------
 
-truncate table gold.fact_transactions
+truncate table `dev-catalog`.`gold`.`fact_transactions`
 
 -- COMMAND ----------
 
-insert into gold.fact_transactions
+insert into `dev-catalog`.`gold`.`fact_transactions`
 select 
   t.TransactionID, 
   t.SRC_TransactionID,
@@ -45,11 +45,19 @@ select
   t.ClaimID,
   t.datasource,
   current_timestamp()
-  from silver.transactions t 
+  from `dev-catalog`.`silver`.`transactions` t 
   where t.is_current=true and t.is_quarantined=false
 
 
 
 -- COMMAND ----------
 
+select * from `dev-catalog`.`gold`.`fact_transactions`
 
+-- COMMAND ----------
+
+select * from `dev-catalog`.`silver`.`transactions`
+
+-- COMMAND ----------
+
+select * from `dev-catalog`.`silver`.`encounters`

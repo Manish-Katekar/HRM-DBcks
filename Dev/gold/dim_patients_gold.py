@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS gold.dim_patient
+# MAGIC CREATE TABLE IF NOT EXISTS `dev-catalog`.`gold`.`dim_patients` 
 # MAGIC (
 # MAGIC     patient_key STRING,
 # MAGIC     src_patientid STRING,
@@ -18,12 +18,12 @@
 # COMMAND ----------
 
 # MAGIC %sql 
-# MAGIC truncate TABLE gold.dim_patient 
+# MAGIC truncate TABLE `dev-catalog`.`gold`.`dim_patients`
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC insert into gold.dim_patient
+# MAGIC insert into `dev-catalog`.`gold`.`dim_patients`
 # MAGIC select 
 # MAGIC      patient_key ,
 # MAGIC     src_patientid ,
@@ -36,5 +36,5 @@
 # MAGIC     dob ,
 # MAGIC     address ,
 # MAGIC     datasource 
-# MAGIC  from silver.patients
+# MAGIC  from `dev-catalog`.`silver`.`patients`
 # MAGIC  where is_current=true and is_quarantined=false
