@@ -1,16 +1,17 @@
 # Databricks notebook source
 # MAGIC %sql
+# MAGIC
 # MAGIC -- Create temporary views for the parquet files
 # MAGIC CREATE OR REPLACE TEMP VIEW hosa_encounters
 # MAGIC USING parquet
 # MAGIC OPTIONS (
-# MAGIC   path "dbfs:/mnt/bronze/hosa/encounters"
+# MAGIC   path  "abfss://medallion-dev@datalakehrm.dfs.core.windows.net/bronze/hosa/encounters/"
 # MAGIC );
 # MAGIC
 # MAGIC CREATE OR REPLACE TEMP VIEW hosb_encounters
 # MAGIC USING parquet
 # MAGIC OPTIONS (
-# MAGIC   path "dbfs:/mnt/bronze/hosb/encounters"
+# MAGIC   path  "abfss://medallion-dev@datalakehrm.dfs.core.windows.net/bronze/hosb/encounters/"
 # MAGIC );
 # MAGIC
 # MAGIC -- Union the two views
@@ -19,13 +20,6 @@
 # MAGIC UNION ALL
 # MAGIC SELECT * FROM hosb_encounters;
 # MAGIC
-# MAGIC -- Display the merged data
-# MAGIC SELECT * FROM encounters;
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select * from encounters
 
 # COMMAND ----------
 
@@ -52,13 +46,7 @@
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select * from quality_checks
-# MAGIC where datasource='hos-b'
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS silver.encounters (
+# MAGIC CREATE TABLE IF NOT EXISTS `dev-catalog`.`silver`.`encounters` (
 # MAGIC EncounterID string,
 # MAGIC SRC_EncounterID string,
 # MAGIC PatientID string,
@@ -81,7 +69,7 @@
 
 # MAGIC %sql
 # MAGIC -- Update old record to implement SCD Type 2
-# MAGIC MERGE INTO silver.encounters AS target
+# MAGIC MERGE INTO `dev-catalog`.`silver`.`encounters` AS target
 # MAGIC USING quality_checks AS source
 # MAGIC ON target.EncounterID = source.EncounterID AND target.is_current = true
 # MAGIC WHEN MATCHED AND (
@@ -106,7 +94,7 @@
 
 # MAGIC %sql
 # MAGIC -- Insert new record to implement SCD Type 2
-# MAGIC MERGE INTO silver.encounters AS target USING quality_checks AS source ON target.EncounterID = source.EncounterID
+# MAGIC MERGE INTO `dev-catalog`.`silver`.`encounters`  AS target USING quality_checks AS source ON target.EncounterID = source.EncounterID
 # MAGIC AND target.is_current = true
 # MAGIC WHEN NOT MATCHED THEN
 # MAGIC INSERT
@@ -145,14 +133,3 @@
 # MAGIC     current_timestamp(),
 # MAGIC     true
 # MAGIC   );
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select SRC_EncounterID,datasource,count(patientid) from  silver.encounters
-# MAGIC group by all
-# MAGIC order by 3 desc

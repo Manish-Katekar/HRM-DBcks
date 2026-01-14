@@ -1,28 +1,4 @@
 # Databricks notebook source
-from pyspark.sql import SparkSession, functions as f
-
-# Read the CSV file
-cptcodes_df = spark.read.csv("/mnt/landing/cptcodes/*.csv", header=True)
-
-# Replace whitespaces in column names with underscores and convert to lowercase
-for col in cptcodes_df.columns:
-    new_col = col.replace(" ", "_").lower()
-    cptcodes_df = cptcodes_df.withColumnRenamed(col, new_col)
-cptcodes_df.createOrReplaceTempView("cptcodes")
-display(cptcodes_df)
-
-# COMMAND ----------
-
-# DBTITLE 1,Parquet file creation
-cptcodes_df.write.format("parquet").mode("overwrite").save("/mnt/bronze/cpt_codes")
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select * from cptcodes
-
-# COMMAND ----------
-
 # MAGIC %sql
 # MAGIC CREATE OR REPLACE TEMP VIEW quality_checks AS
 # MAGIC SELECT 
@@ -34,17 +10,12 @@ cptcodes_df.write.format("parquet").mode("overwrite").save("/mnt/bronze/cpt_code
 # MAGIC         WHEN cpt_codes IS NULL OR procedure_code_descriptions IS NULL  THEN TRUE
 # MAGIC         ELSE FALSE
 # MAGIC     END AS is_quarantined
-# MAGIC FROM cptcodes
+# MAGIC FROM `dev-catalog`.`bronze`.`cptcodes`
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select * from quality_checks
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS silver.cptcodes (
+# MAGIC CREATE TABLE IF NOT EXISTS `dev-catalog`.`silver`.`cptcodes` (
 # MAGIC cpt_codes string,
 # MAGIC procedure_code_category string,
 # MAGIC procedure_code_descriptions string,
@@ -60,7 +31,7 @@ cptcodes_df.write.format("parquet").mode("overwrite").save("/mnt/bronze/cpt_code
 
 # MAGIC %sql
 # MAGIC -- Update old record to implement SCD Type 2
-# MAGIC MERGE INTO silver.cptcodes AS target
+# MAGIC MERGE INTO `dev-catalog`.`silver`.`cptcodes` AS target
 # MAGIC USING quality_checks AS source
 # MAGIC ON target.cpt_codes = source.cpt_codes AND target.is_current = true
 # MAGIC WHEN MATCHED AND (
@@ -78,7 +49,7 @@ cptcodes_df.write.format("parquet").mode("overwrite").save("/mnt/bronze/cpt_code
 
 # MAGIC %sql
 # MAGIC -- Insert new record to implement SCD Type 2
-# MAGIC MERGE INTO silver.cptcodes AS target
+# MAGIC MERGE INTO `dev-catalog`.`silver`.`cptcodes` AS target
 # MAGIC USING quality_checks AS source
 # MAGIC ON target.cpt_codes = source.cpt_codes AND target.is_current = true
 # MAGIC WHEN NOT MATCHED THEN
@@ -102,8 +73,3 @@ cptcodes_df.write.format("parquet").mode("overwrite").save("/mnt/bronze/cpt_code
 # MAGIC     current_timestamp(),
 # MAGIC     true
 # MAGIC   );
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select * from  silver.cptcodes

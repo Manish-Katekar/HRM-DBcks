@@ -1,11 +1,12 @@
 # Databricks notebook source
 from pyspark.sql import SparkSession, functions as f
+bronze = spark.sql("DESCRIBE EXTERNAL LOCATION `datalake-hrm-bronze`").select("url").collect()[0][0]
 
 #Reading Hospital A departments data 
-df_hosa=spark.read.parquet("/mnt/bronze/hosa/departments")
+df_hosa=spark.read.parquet(bronze+"/hosa/departments")
 
 #Reading Hospital B departments data 
-df_hosb=spark.read.parquet("/mnt/bronze/hosb/departments")
+df_hosb=spark.read.parquet(bronze+"/hosb/departments")
 
 #union two departments dataframes
 df_merged = df_hosa.unionByName(df_hosb)
@@ -21,7 +22,7 @@ df_merged.createOrReplaceTempView("departments")
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS silver.departments (
+# MAGIC CREATE TABLE IF NOT EXISTS `dev-catalog`.`silver`.`departments` (
 # MAGIC Dept_Id string,
 # MAGIC SRC_Dept_Id string,
 # MAGIC Name string,
@@ -32,13 +33,13 @@ df_merged.createOrReplaceTempView("departments")
 
 # COMMAND ----------
 
-# MAGIC %sql 
-# MAGIC truncate table silver.departments
+# MAGIC %sql
+# MAGIC TRUNCATE TABLE  `dev-catalog`.`silver`.`departments` 
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC insert into silver.departments
+# MAGIC insert into  `dev-catalog`.`silver`.`departments` 
 # MAGIC SELECT 
 # MAGIC Dept_Id,
 # MAGIC SRC_Dept_Id,
@@ -49,8 +50,3 @@ df_merged.createOrReplaceTempView("departments")
 # MAGIC         ELSE FALSE
 # MAGIC     END AS is_quarantined
 # MAGIC FROM departments
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select * from silver.departments

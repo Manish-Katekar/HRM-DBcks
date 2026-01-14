@@ -1,11 +1,13 @@
 # Databricks notebook source
 from pyspark.sql import SparkSession, functions as f
 
+bronze = spark.sql("DESCRIBE EXTERNAL LOCATION `datalake-hrm-bronze`").select("url").collect()[0][0]
+
 #Reading Hospital A departments data 
-df_hosa=spark.read.parquet("/mnt/bronze/hosa/transactions")
+df_hosa=spark.read.parquet(bronze+"/hosa/transactions")
 
 #Reading Hospital B departments data 
-df_hosb=spark.read.parquet("/mnt/bronze/hosb/transactions")
+df_hosb=spark.read.parquet(bronze+"/hosb/transactions")
 
 #union two departments dataframes
 df_merged = df_hosa.unionByName(df_hosb)
@@ -51,7 +53,7 @@ df_merged.createOrReplaceTempView("transactions")
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS silver.transactions (
+# MAGIC CREATE TABLE IF NOT EXISTS `dev-catalog`.`silver`.`transactions`(
 # MAGIC   TransactionID string,
 # MAGIC   SRC_TransactionID string,
 # MAGIC   EncounterID string,
@@ -86,7 +88,7 @@ df_merged.createOrReplaceTempView("transactions")
 
 # MAGIC %sql
 # MAGIC -- Update old record to implement SCD Type 2
-# MAGIC MERGE INTO silver.transactions AS target USING quality_checks AS source ON target.TransactionID = source.TransactionID
+# MAGIC MERGE INTO `dev-catalog`.`silver`.`transactions` AS target USING quality_checks AS source ON target.TransactionID = source.TransactionID
 # MAGIC AND target.is_current = true
 # MAGIC WHEN MATCHED
 # MAGIC AND (
@@ -123,7 +125,7 @@ df_merged.createOrReplaceTempView("transactions")
 
 # MAGIC %sql
 # MAGIC -- Insert new record to implement SCD Type 2
-# MAGIC MERGE INTO silver.transactions AS target USING quality_checks AS source ON target.TransactionID = source.TransactionID
+# MAGIC MERGE INTO `dev-catalog`.`silver`.`transactions` AS target USING quality_checks AS source ON target.TransactionID = source.TransactionID
 # MAGIC AND target.is_current = true
 # MAGIC WHEN NOT MATCHED THEN
 # MAGIC INSERT

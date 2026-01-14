@@ -1,27 +1,4 @@
 # Databricks notebook source
-from pyspark.sql import SparkSession, functions as f
-
-claims_df=spark.read.csv("/mnt/landing/claims/*.csv",header=True)
-
-claims_df = claims_df.withColumn(
-    "datasource",
-    f.when(f.input_file_name().contains("hospital1"), "hosa").when(f.input_file_name().contains("hospital2"), "hosb")
-     .otherwise(None)
-)
-
-display(claims_df)
-
-# COMMAND ----------
-
-# DBTITLE 1,Parquet file creation
-claims_df.write.format("parquet").mode("overwrite").save("/mnt/bronze/claims/")
-
-# COMMAND ----------
-
-claims_df.createOrReplaceTempView("claims")
-
-# COMMAND ----------
-
 # MAGIC %sql
 # MAGIC CREATE OR REPLACE TEMP VIEW quality_checks AS
 # MAGIC SELECT 
@@ -49,17 +26,12 @@ claims_df.createOrReplaceTempView("claims")
 # MAGIC         WHEN ClaimID IS NULL OR TransactionID IS NULL OR PatientID IS NULL or ServiceDate IS NULL THEN TRUE
 # MAGIC         ELSE FALSE
 # MAGIC     END AS is_quarantined
-# MAGIC FROM claims
+# MAGIC FROM `dev-catalog`.`bronze`.`claims`
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select * from quality_checks
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS silver.claims (
+# MAGIC CREATE TABLE IF NOT EXISTS `dev-catalog`.`silver`.`claims` (
 # MAGIC ClaimID string,
 # MAGIC SRC_ClaimID string,
 # MAGIC TransactionID string,
@@ -91,7 +63,7 @@ claims_df.createOrReplaceTempView("claims")
 
 # MAGIC %sql
 # MAGIC -- Update old record to implement SCD Type 2
-# MAGIC MERGE INTO silver.claims AS target
+# MAGIC MERGE INTO `dev-catalog`.`silver`.`claims` AS target
 # MAGIC USING quality_checks AS source
 # MAGIC ON target.ClaimID = source.ClaimID AND target.is_current = true
 # MAGIC WHEN MATCHED AND (
@@ -125,7 +97,7 @@ claims_df.createOrReplaceTempView("claims")
 
 # MAGIC %sql
 # MAGIC -- Insert new record to implement SCD Type 2
-# MAGIC MERGE INTO silver.claims AS target
+# MAGIC MERGE INTO `dev-catalog`.`silver`.`claims` AS target
 # MAGIC USING quality_checks AS source
 # MAGIC ON target.ClaimID = source.ClaimID AND target.is_current = true
 # MAGIC WHEN NOT MATCHED THEN
@@ -181,8 +153,3 @@ claims_df.createOrReplaceTempView("claims")
 # MAGIC     current_timestamp(),
 # MAGIC     true
 # MAGIC   );
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select * from  silver.claims
