@@ -1,5 +1,4 @@
 # Databricks notebook source
-
 bronze = spark.sql("DESCRIBE EXTERNAL LOCATION `datalake-hrm-bronze`").select("url").collect()[0][0]
 
 #Reading Hospital A patient data 
